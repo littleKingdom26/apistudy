@@ -3,7 +3,6 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { MapPinned, Search, ShieldCheck } from "lucide-react";
-import { demoPublicItems } from "@/lib/demo-data";
 import type { PublicDataResponse, PublicItem, UserProfile } from "@/lib/types";
 
 type PublicDataExplorerProps = {
@@ -12,8 +11,8 @@ type PublicDataExplorerProps = {
 
 export function PublicDataExplorer({ user }: PublicDataExplorerProps) {
   const [query, setQuery] = useState("서울");
-  const [items, setItems] = useState<PublicItem[]>(demoPublicItems);
-  const [message, setMessage] = useState("공공 API 조회를 준비했습니다.");
+  const [items, setItems] = useState<PublicItem[]>([]);
+  const [message, setMessage] = useState("검색어를 입력하고 조회 버튼을 눌러 공공 API를 호출하세요.");
   const [isLoading, setIsLoading] = useState(false);
 
   const mappableCount = useMemo(
@@ -22,7 +21,7 @@ export function PublicDataExplorer({ user }: PublicDataExplorerProps) {
   );
 
   useEffect(() => {
-    localStorage.setItem("public-items", JSON.stringify(demoPublicItems));
+    localStorage.removeItem("public-items");
   }, []);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -44,16 +43,12 @@ export function PublicDataExplorer({ user }: PublicDataExplorerProps) {
 
       setItems(data.items);
       localStorage.setItem("public-items", JSON.stringify(data.items));
-      setMessage(data.isDemo ? "API 키가 없어 데모 데이터로 조회했습니다." : "공공 API 데이터를 불러왔습니다.");
+      setMessage(data.message || "공공 API 데이터를 불러왔습니다.");
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "알 수 없는 오류가 발생했습니다.";
-      if (errorMessage.includes("네이버 인증")) {
-        setMessage(errorMessage);
-      } else {
-        setItems(demoPublicItems);
-        localStorage.setItem("public-items", JSON.stringify(demoPublicItems));
-        setMessage(`${errorMessage} 데모 데이터로 표시합니다.`);
-      }
+      setItems([]);
+      localStorage.removeItem("public-items");
+      setMessage(errorMessage);
     } finally {
       setIsLoading(false);
     }
